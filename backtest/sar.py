@@ -1,11 +1,12 @@
 # -*-coding: utf-8 -*-
 import os
+import numpy as np
 import pandas as pd
+import mplfinance as mpf
+from plot_candle import plot_candlechart
 
-# sar策略
 
-
-class SARCalculator:
+class SARData:
     def __init__(self, af=0.02, mf=0.2):
         self.af = af    # 加速因子
         self.mf = mf    # 最大加速因子
@@ -53,10 +54,15 @@ class SARCalculator:
         return sar_values
 
 
-df = pd.read_csv(os.path.join("..", "data", "klines_data", "BTCUSDT_klines_30m.csv"))
-high_values = df["high"]
-low_values = df["low"]
+if __name__ == '__main__':
+    df = pd.read_csv(os.path.join("..", "data", "klines_data", "BTCUSDT_klines_30m.csv"))
+    high_values, low_values, close_values = df['high'], df['low'], df['close'].tolist()
 
-sar_calculator = SARCalculator()
-sar_values = sar_calculator.calc_sar(high_values, low_values)
-print(sar_values)
+    sar_calculator = SARData()
+    sar_values = SARData().calc_sar(high_values, low_values)
+    sar_values.insert(0, df['close'].iloc[0])
+
+    sar_colors = np.where(np.isclose(close_values, sar_values), "yellow", np.where(np.array(close_values) > np.array(sar_values), "red", "green"))
+    add_plot_sar = mpf.make_addplot(sar_values, type="scatter", color=sar_colors, markersize=2)
+
+    plot_candlechart(df, avg=True, add_plot=add_plot_sar)

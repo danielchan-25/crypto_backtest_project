@@ -43,7 +43,15 @@ def get_okx_klines():
             df["timestamp"] = pd.to_datetime(df["timestamp"].astype("int64"), unit="ms", utc=True)
             df["timestamp"] = df["timestamp"].dt.tz_convert("Asia/Shanghai")    # 转换成北京时区
             df = df.sort_values(by="timestamp", ignore_index=True)
-            df.to_csv(os.path.join("data", "klines_data", f"BTCUSDT_klines_{k_type}.csv"), index=False)
+
+            if k_type == "1H":
+                filename = f"BTCUSDT_klines_1h.csv"
+            elif k_type == "2H":
+                filename = f"BTCUSDT_klines_2h.csv"
+            else:
+                filename = f"BTCUSDT_klines_{k_type}.csv"
+
+            df.to_csv(os.path.join("data", "klines_data", filename), index=False)
         return True
 
     except Exception as e:

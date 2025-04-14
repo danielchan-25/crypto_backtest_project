@@ -1,17 +1,16 @@
 # -*-coding: utf-8 -*-
+import os
 import numpy as np
 import pandas as pd
 import mplfinance as mpf
-
+from datetime import datetime
 
 # 绘制K线图函数
 
 
-def plot_candlechart(df, title="BTC-USDT", volume_panel=True, avg=False, ma_panel=True, add_plot=None):
+def plot_candlechart(df, title="BTC-USDT", volume_panel=True, avg=False, add_plot=None):
     """
-    绘制K线图，并可选地添加其他自定义图形（例如技术指标）。
-
-    :param title:
+    绘制K线图，并可选地添加其他自定义图形（例如技术指标）
     :param df: pd.DataFrame, 必须包含以下列：
         - timestamp: 时间戳（通常是交易的时间点）
         - open: 开盘价
@@ -19,11 +18,9 @@ def plot_candlechart(df, title="BTC-USDT", volume_panel=True, avg=False, ma_pane
         - low: 最低价
         - close: 收盘价
         - volume: 成交量
-
+    :param title: 合约名称：BTC-USDT
     :param volume_panel: 是否添加成交量面板，默认为 True。
-
-    :param avg_plot_avg: 是否添加均线。默认为False，如果为True，则会绘制累积均值线。
-
+    :param avg: 累积均值线
     :param add_plot: 用于添加自定义的额外图形（例如技术指标），可以是单个对象或对象列表。
                       如果不传递，默认为 None。
 
@@ -71,6 +68,8 @@ def plot_candlechart(df, title="BTC-USDT", volume_panel=True, avg=False, ma_pane
     if add_plot_volume:
         addplot_list.append(add_plot_volume)
 
+    timestamp = datetime.today().strftime("%Y%m%d%H%M%S")
+
     mpf_params = {
         "data": df,
         "title": title,
@@ -84,13 +83,6 @@ def plot_candlechart(df, title="BTC-USDT", volume_panel=True, avg=False, ma_pane
         "figscale": 1.2,
         "datetime_format": "%Y-%m-%d %H:%M:%S",
         "xrotation": 10,
+        "savefig": os.path.join(f"{timestamp}_sar.png")
     }
-
-
-    # 主图
-    if ma_panel:
-        mpf_params["mav"] = (5, 15, 30)
-        mpf_params["mavcolors"] = ["orange", "blue", "red"]
-
     mpf.plot(**mpf_params)
-    mpf.show()

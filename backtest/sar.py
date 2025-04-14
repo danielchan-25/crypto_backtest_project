@@ -58,11 +58,43 @@ if __name__ == '__main__':
     df = pd.read_csv(os.path.join("..", "data", "klines_data", "BTCUSDT_klines_30m.csv"))
     high_values, low_values, close_values = df['high'], df['low'], df['close'].tolist()
 
-    sar_calculator = SARData()
-    sar_values = SARData().calc_sar(high_values, low_values)
+    sar_calculator = SARData(af=0.02, mf=0.3)
+    sar_values = sar_calculator.calc_sar(high_values, low_values)
     sar_values.insert(0, df['close'].iloc[0])
 
+    df["sar"] = sar_values  # SAR
+    df["ma"] = df["close"].rolling(window=15).mean().fillna(df["close"])  # MA均线
+
+
+    # 开仓信号：SAR与MA均线同方向
+    #   SAR方向 = SAR点位在K线下，做多；反之做空
+    #   MA均线方向 = 当前K线-MA均线，K线在MA均线上做多；反之做空
+    # 平仓信号：
+
+    df["sar_direction"] = np.where(df["close"] > df["sar"], 1, np.where(df["close"] < df["sar"], -1, 0))  # SAR方向
+    df["ma_direction"] = np.where(df["close"] > df["ma"], 1, np.where(df["close"] < df["ma"], -1, 0))   # MA方向
+    df["signal"] = np.where(
+        (df["sar_direction"] == 1) & (df["ma_direction"] == 1),
+        1,
+        np.where(
+            (df["sar_direction"] == -1) & (df["ma_direction"] == -1),
+            -1,
+            0
+        )
+    )
+
+    # 画图校验
     sar_colors = np.where(np.isclose(close_values, sar_values), "yellow", np.where(np.array(close_values) > np.array(sar_values), "red", "green"))
     add_plot_sar = mpf.make_addplot(sar_values, type="scatter", color=sar_colors, markersize=2)
+    add_plot_ma = mpf.make_addplot(df["ma"].tolist(), type="line", color="orange")
 
-    plot_candlechart(df, avg=True, add_plot=add_plot_sar)
+    df.loc[df["signal"] == 1, "buy"] = df["close"].fillna(0)
+    df.loc[df["signal"] == -1, "sell"] = df["close"].fillna(0)
+    buy_values = df["buy"].tolist()    # 做多信号
+    sell_values = df["sell"].tolist()   # 做空信号
+
+    add_plot_buy = mpf.make_addplot(buy_values, type="scatter", marker="^", color="red", markersize=20)
+    add_plot_sell = mpf.make_addplot(sell_values, type="scatter", marker="v", color="green", markersize=20)
+    plot_candlechart(df, avg=False, add_plot=[add_plot_sar, add_plot_ma, add_plot_buy, add_plot_sell])
+
+    df["equity"] = 1000000
